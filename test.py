@@ -14,7 +14,7 @@ class Node:
 def heuristic(node, goal_node):
     dx = node.x - goal_node.x
     dy = node.y - goal_node.y
-    return (abs(dx) + abs(dy))*10
+    return (abs(dx) + abs(dy)) * 10
 
 def a_star(maze, start, goal):
     open_set = []
@@ -22,16 +22,15 @@ def a_star(maze, start, goal):
 
     start_node = Node(start[0], start[1])
     goal_node = Node(goal[0], goal[1])
-    if (maze[start[0]][start[1]] == 1) or (maze[goal[0]][goal[1]] == 1):
-        return None, None
+    if maze[start[0]][start[1]] == 1 or maze[goal[0]][goal[1]] == 1:
+        return None, None  # Caminho não encontrado
+
     g_h_f_matrix = [[[] for _ in range(len(maze[0]))] for _ in range(len(maze))]
 
     open_set.append(start_node)
 
-    while open_set:#enquanto tiver item aberto
-
+    while open_set:
         current_node = min(open_set, key=lambda node: node.f)
-
         open_set.remove(current_node)
         closed_set.add(current_node)
 
@@ -42,6 +41,7 @@ def a_star(maze, start, goal):
                 current_node = current_node.parent
             return path[::-1], g_h_f_matrix
 
+        neighbors_added = False  # Variável para verificar se algum vizinho foi adicionado
 
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
@@ -49,33 +49,41 @@ def a_star(maze, start, goal):
                     continue
 
                 new_x, new_y = current_node.x + dx, current_node.y + dy
-                neighbor = Node(new_x, new_y)
-                # if 0 <= new_x < len(maze) and 0 <= new_y < len(maze[0]) and maze[new_x][new_y] == 0:
-                if neighbor not in open_set and neighbor not in closed_set and not maze[new_x][new_y] == 1:
-                    neighbor.parent = current_node
-                    neighbor.g = current_node.g + (10 if dx == 0 or dy == 0 else 14)
-                    neighbor.h = heuristic(neighbor, goal_node)
-                    neighbor.f = neighbor.g + neighbor.h
-                    g_h_f_matrix[new_x][new_y] = [neighbor.g, neighbor.h, neighbor.f]
-                    open_set.append(neighbor)
 
-                elif neighbor in open_set and not maze[current_node.x][current_node.y] == 1:
-                    aux_g = (10 if dx == 0 or dy == 0 else 14)
+                if 0 <= new_x < len(maze) and 0 <= new_y < len(maze[0]) and maze[new_x][new_y] != 1:
+                    neighbor = Node(new_x, new_y)
 
-                    if neighbor.g > current_node.g + aux_g:
-                        neighbor.g = current_node.g + aux_g
+                    if neighbor not in open_set and neighbor not in closed_set:
+                        neighbor.parent = current_node
+                        neighbor.g = current_node.g + (10 if dx == 0 or dy == 0 else 14)
+                        neighbor.h = heuristic(neighbor, goal_node)
                         neighbor.f = neighbor.g + neighbor.h
                         g_h_f_matrix[new_x][new_y] = [neighbor.g, neighbor.h, neighbor.f]
-                        neighbor.parent = current_node
+                        open_set.append(neighbor)
+                        neighbors_added = True  # Marque que um vizinho foi adicionado
 
-    return None, g_h_f_matrix
+                    elif neighbor in open_set and not maze[new_x][new_y] == 1:
+                        aux_g = (10 if dx == 0 or dy == 0 else 14)
+
+                        if neighbor.g > current_node.g + aux_g:
+                            neighbor.g = current_node.g + aux_g
+                            neighbor.f = neighbor.g + neighbor.h
+                            g_h_f_matrix[new_x][new_y] = [neighbor.g, neighbor.h, neighbor.f]
+                            neighbor.parent = current_node
+
+        # Se nenhum vizinho foi adicionado, o algoritmo está preso
+        if not neighbors_added:
+            return None, None  # Caminho não encontrado
+
+    return None, g_h_f_matrix  # Caminho não encontrado
+
 inicio = time.time()
 # Exemplo de uso
 start = (0, 0)
 goal = (9, 9)
 
 # Maze representa o mapa que você forneceu
-maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+maze = [[0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 1, 1, 1, 0],
         [1, 1, 1, 1, 0, 0, 1, 0, 1, 0],
         [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
@@ -86,14 +94,15 @@ maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
-
 path, g_h_f_matrix = a_star(maze, start, goal)
 fim = time.time()
 
-print(path)
+if path is not None:
+    print(path)
+else:
+    print("Caminho não encontrado")
 
 import numpy as np
-
 
 for row in g_h_f_matrix:
     formatted_row = []
@@ -101,8 +110,8 @@ for row in g_h_f_matrix:
         if not value:
             formatted_row.append("[F:--- G:--- H:---]")
         else:
-            formatted_value = f"[F:{int(value[2] ):<3} G:{int(value[1]):<3} H:{int(value[0] ):<3}]"
+            formatted_value = f"[F:{int(value[2]):<3} G:{int(value[0]):<3} H:{int(value[1]):<3}]"
             formatted_row.append(formatted_value)
     row_string = ' '.join(formatted_row)
     print(row_string)
-print(f'Tempo:{fim-inicio}')
+print(f'Tempo: {fim - inicio}')
